@@ -30,6 +30,7 @@ requirement, applied at the file level (Zoho-side reference-number checks
 in zoho_client.py cover it at the transaction level too, as a second layer).
 """
 import os
+import re
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -53,6 +54,60 @@ def _raise_with_graph_body(resp: requests.Response) -> None:
         resp.raise_for_status()
     except requests.exceptions.HTTPError as e:
         raise requests.exceptions.HTTPError(f"{e} | Graph response body: {resp.text[:500]}", response=resp) from e
+
+
+# ---------------------------------------------------------------------------
+# "Don't reprocess an already-fully-posted file" marker convention
+# (2026-08-10, per Ravindra: "I dont want to process the files i already
+# processed/posted. what would be the best way to do it. Is it good to
+# rename the file with .COMPLETED at the end and post only those files
+# which does not end with it?"). Used together by main.py: /post-
+# transactions calls completed_file_name() + OneDriveClient.rename_file()
+# once every postable row in a file has a real Zoho posting reference (see
+# that route's own comment for the exact eligibility rule), and /list-files
+# calls is_marked_complete() to filter such files out of what it returns --
+# so a completed file is skipped BEFORE it's ever downloaded again, not
+# merely re-processed-and-silently-skipped at the row level the way this
+# pipeline already handled duplicates before this update.
+#
+# Module-level (not on OneDriveClient) since this is a pure filename
+# convention with no Graph call of its own -- both call sites (marking one
+# file complete, filtering a whole listing) need the exact same rule, so
+# it's defined once here rather than risking the two drifting apart.
+# ---------------------------------------------------------------------------
+_COMPLETED_TOKEN = "COMPLETED"
+
+
+def completed_file_name(file_name: str) -> str:
+    """Inserts the completion marker into file_name, right BEFORE its final
+    extension -- "Statement.xlsx" -> "Statement.COMPLETED.xlsx" -- NOT
+    appended after it ("Statement.xlsx.COMPLETED"). Appending after the real
+    extension would stop Windows/OneDrive from recognizing the file as an
+    Excel file at all (no more double-click-to-open-in-Excel, no preview);
+    inserting before it keeps the file fully openable while still being a
+    trivial, unambiguous substring for is_marked_complete() to filter on.
+
+    A file_name with no "." at all (no extension -- not a real case for
+    this pipeline, every bank statement is .xlsx/.xls, but handled rather
+    than crashing) just gets the marker appended with a leading dot."""
+    if "." not in file_name:
+        return f"{file_name}.{_COMPLETED_TOKEN}"
+    stem, ext = file_name.rsplit(".", 1)
+    return f"{stem}.{_COMPLETED_TOKEN}.{ext}"
+
+
+def is_marked_complete(file_name: str) -> bool:
+    """True if file_name already carries the marker completed_file_name()
+    inserts. Checked as a case-insensitive ".completed." substring (dot on
+    BOTH sides, matching the "insert before the extension" convention above)
+    -- OR a trailing ".completed" with nothing after it, covering the rare
+    no-extension case completed_file_name() also handles, so that edge case
+    can't get re-marked/double-suffixed on a later run
+    ("Statement.COMPLETED.COMPLETED...") for lack of ever being recognized
+    as already complete."""
+    lower = file_name.lower()
+    marker = f".{_COMPLETED_TOKEN.lower()}"
+    return f"{marker}." in lower or lower.endswith(marker)
 
 
 @dataclass
@@ -212,6 +267,47 @@ class OneDriveClient:
             raise FileNotFoundError(f"{file_name!r} not found in OneDrive folder {folder_path!r}. Found: {found}.")
         return match
 
+    def find_files_containing(self, folder_path: str, substring: str) -> List[dict]:
+        """Returns every FILE (never a subfolder -- see list_files_in_folder(),
+        which this reuses) directly inside folder_path whose name CONTAINS
+        `substring`, matched case-insensitively AND with every non-
+        alphanumeric character stripped from both sides first (so "INV-
+        20260184.pdf" matches a search substring of "INV20260184", "INV
+        20260184", or "inv-20260184" -- real invoice numbers get typed with
+        or without hyphens/spaces inconsistently between a bank statement's
+        own narration/reference text and however the actual invoice PDF got
+        named/saved). Returns an empty list (never raises) if nothing
+        matches or `substring` is blank -- "no candidate file found" is a
+        normal, expected outcome for this search, not an error condition.
+
+        Added 2026-08-12, later same day, for the Supporting Document
+        Attachment feature (main.py's /attach-supporting-docs, renamed from
+        /verify-supporting-docs when Ravindra scoped the feature down to
+        attachment-only): the "find this row's invoice" search key is its
+        reference_number, from categorize_from_module.py's
+        extract_attachment_check_rows() -- SOURCE CHANGED 2026-08-13, now
+        the statement's own raw reference/transaction-reference column
+        rather than the resolved PostingReference column (see that
+        function's own docstring) -- which is a free-text value this
+        codebase doesn't otherwise constrain to look like a filename --
+        this alnum-only, contains-based match is deliberately loose (a
+        stricter exact-filename match would miss real invoices constantly)
+        while still cheap and file-content-free (no need to open/OCR every
+        file in the folder just to find the right one -- see main.py's
+        own docstring for what happens if this returns more than one
+        match: never guessed, always surfaced as ambiguous)."""
+        target = re.sub(r"[^a-z0-9]", "", (substring or "").strip().lower())
+        if not target:
+            return []
+        items = self.list_files_in_folder(folder_path)
+        matches = []
+        for item in items:
+            name = item.get("name") or ""
+            normalized_name = re.sub(r"[^a-z0-9]", "", name.lower())
+            if target in normalized_name:
+                matches.append(item)
+        return matches
+
     def download_file(self, item: dict, dest_path: str) -> str:
         download_url = item.get("@microsoft.graph.downloadUrl")
         if not download_url:
@@ -306,6 +402,29 @@ class OneDriveClient:
         headers = self._headers()
         headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         resp = requests.put(url, headers=headers, data=content, timeout=120)
+        _raise_with_graph_body(resp)
+        return resp.json()
+
+    def rename_file(self, item_id: str, new_name: str) -> dict:
+        """Renames a file IN PLACE via Graph's driveItem PATCH (PATCH
+        /drives/{drive_id}/items/{item_id}, body {"name": new_name}) --
+        the correct Graph operation for a rename: the same item id (and
+        therefore version history, sharing links, etc.) is preserved,
+        unlike downloading-then-reuploading-under-a-new-name, which would
+        create a brand new item and briefly make the file vanish from the
+        folder under its old name.
+
+        2026-08-10, per Ravindra: "I dont want to process the files i
+        already processed/posted ... Is it good to rename the file with
+        .COMPLETED at the end and post only those files which does not end
+        with it?" -- used by main.py's /post-transactions to append this
+        pipeline's completion marker (see completed_file_name() below) once
+        every postable row in a file has a real Zoho posting reference, so
+        a future /list-files call can filter it out entirely (see
+        is_marked_complete()) -- the file is never even downloaded again,
+        not merely re-processed-and-skipped-again at the row level."""
+        url = f"{GRAPH_BASE_URL}/drives/{self.config.drive_id}/items/{item_id}"
+        resp = requests.patch(url, headers=self._headers(), json={"name": new_name}, timeout=30)
         _raise_with_graph_body(resp)
         return resp.json()
 
