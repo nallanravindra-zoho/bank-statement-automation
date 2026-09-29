@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Attach Supporting Documents</title>
+  <link rel="stylesheet" href="widget.css" />
+  <link rel="stylesheet" href="post_widget.css" />
+  <link rel="stylesheet" href="supporting_docs_widget.css" />
+  <!-- Same Zoho Finance widget SDK as widget.html/post_widget.html -- gives
+       us the ZFAPPS global used below. -->
+  <script src="https://js.zohostatic.com/zohofinance/v2.0/zf_sdk.js"></script>
+</head>
+<body>
+  <div class="panel post-panel supporting-docs-panel">
+    <div class="panel-header">
+      <div class="header-icon">&#128206;</div>
+      <div>
+        <h1>Attach Supporting Documents</h1>
+        <p class="subtitle">For every already-posted row whose category requires a supporting document, finds
+          its invoice in OneDrive (under the selected account's own docs folder), matches it to the right
+          Zoho entry by narration, and attaches it.</p>
+      </div>
+    </div>
+
+    <div id="status" class="status">Loading organizations&hellip;</div>
+
+    <!-- Run header: same compact "what's running right now" bar as
+         post_widget.html's, showing the selected org and account(s) -- this
+         widget picks accounts the SAME way post_widget.js does (own org +
+         account picker), not a single statement file, per Ravindra: "Just
+         like other widgets this widget also opens up entities and
+         respective accounts". -->
+    <div id="run-header" class="run-header" hidden>
+      <div id="run-header-org" class="run-header-org"></div>
+      <div id="run-header-accounts" class="run-header-accounts"></div>
+      <div id="run-header-status" class="run-header-status"></div>
+    </div>
+
+    <!-- Org + account picker -- identical shape/markup to post_widget.html's
+         own org-select-panel (own org picker, own account checklist,
+         2026-08-09 "Own org + account picker" convention this project
+         already established for every widget that runs independently). No
+         Bank Charges checkbox here -- not relevant to this feature. -->
+    <div id="org-select-panel" class="content-panel" hidden>
+      <div class="section-label">Organization</div>
+      <select id="org-select" class="select-field"></select>
+
+      <div class="section-label" style="margin-top: 20px;">Bank accounts</div>
+      <input type="text" id="account-search" class="search-field" placeholder="Search accounts by name&hellip;" autocomplete="off" />
+      <div id="org-accounts-list" class="account-checklist"></div>
+
+      <div id="selected-accounts-summary" class="chip-list" hidden></div>
+
+      <p class="supporting-docs-file-hint">
+        For each selected account, this looks for that account's already-posted statement file(s), then for every
+        row marked <strong>Supporting Required = Yes</strong>, searches OneDrive under
+        <strong>&lt;org folder&gt;/docs/&lt;account number&gt;/</strong> for an invoice matching that row's
+        reference number, and attaches it to the matching Zoho entry.
+      </p>
+
+      <button type="button" id="org-start-btn" class="btn btn-primary btn-block" style="margin-top: 16px;">OK, Attach Supporting Documents</button>
+    </div>
+
+    <div id="result-banner" class="result-banner" hidden>
+      <div class="result-banner-header">
+        <span id="result-icon" class="result-icon">&#10003;</span>
+        <span id="result-title" class="result-title">All done!</span>
+      </div>
+      <div id="result-subtitle" class="result-subtitle"></div>
+      <div id="result-notes" class="result-notes"></div>
+    </div>
+
+    <!-- Results panel: live per-row attachment status, same visual language
+         as post_widget.html's postings-panel (stats bar + table). -->
+    <div id="checks-panel" class="content-panel" hidden>
+      <div id="checks-stats" class="postings-stats"></div>
+
+      <div class="postings-toolbar">
+        <span id="checks-count-label" class="postings-count-label"></span>
+      </div>
+
+      <div class="postings-table-wrap">
+        <table id="checks-table" class="postings-table">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Row</th>
+              <th>Category</th>
+              <th>Narration</th>
+              <th>Reference</th>
+              <th>Invoice File</th>
+              <th>Matched Zoho Record</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="checks-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <button type="button" id="close-btn" class="btn btn-primary btn-block" style="margin-top: 16px;">Close</button>
+  </div>
+
+  <script src="supp_doc_widget.js"></script>
+</body>
+</html>

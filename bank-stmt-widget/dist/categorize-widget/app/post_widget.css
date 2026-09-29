@@ -1,0 +1,252 @@
+/* post_widget.css -- styles specific to post_widget.html, on top of the
+   shared widget.css (panel/header/status/org-select/progress-rows/buttons
+   all reused as-is -- see post_widget.html's <link> order). Everything
+   below is NEW UI this widget needs that widget.html never did: a live
+   stats bar, a "Delete All" toolbar, and the postings table itself with a
+   per-row Delete button. 2026-08-09, per Ravindra's "post to Zoho Books"
+   feature request. */
+
+/* Bigger than widget.html's panel by default -- this widget needs room for
+   an org/account picker AND a results table at once (see post_widget.js's
+   RESIZE call), unlike widget.html which never shows both at the same
+   time in a way that needs this much horizontal room. */
+.post-panel { min-width: 0; }
+
+/* ---- Run header (2026-08-09, later still) -----------------------------
+   Replaces the old per-account progress-panel entirely -- per Ravindra:
+   "just show the name of the selected org and account(s) at the top and
+   start showing the postings info live as they get updated not at the
+   end." Shown once posting starts; run-header-status is updated live as
+   each file streams in (see post_widget.js's setRunHeaderStatus()). */
+.run-header {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #f5f5ff;
+  border: 1px solid #e0e0f0;
+}
+.run-header-org {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+.run-header-accounts {
+  font-size: 12.5px;
+  color: #4338ca;
+  margin-top: 3px;
+}
+.run-header-status {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ---- Live stats bar --------------------------------------------------- */
+.postings-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.postings-stat {
+  flex: 1 1 110px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #f1f2f4;
+  text-align: center;
+}
+.postings-stat-value { font-size: 19px; font-weight: 800; color: #1a1a2e; line-height: 1.2; }
+.postings-stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+.postings-stat.stat-posted .postings-stat-value { color: #16a34a; }
+.postings-stat.stat-not-posted .postings-stat-value { color: #d97706; }
+.postings-stat.stat-errors .postings-stat-value { color: #dc2626; }
+
+/* ---- Bank Charges/VAT consolidation checkbox (2026-08-10, per Ravindra) -
+   sits between the account checklist and the Start button on the org-select
+   panel. Deliberately understated (not a big colored callout) -- this is an
+   opt-in for a specific month-end workflow, not a warning. */
+.bank-charges-option {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #f1f2f4;
+}
+.bank-charges-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+.bank-charges-option-row input[type="checkbox"] { width: 16px; height: 16px; flex: none; }
+.bank-charges-option-row em { font-style: normal; font-weight: 400; color: #9ca3af; }
+.bank-charges-option-help {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+/* ---- Toolbar (count label + Delete All) -------------------------------- */
+.postings-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.postings-count-label { font-size: 12.5px; color: #6b7280; }
+
+.btn-small { padding: 8px 14px; font-size: 12.5px; }
+.btn-danger {
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  box-shadow: none;
+}
+.btn-danger:hover:not(:disabled) { background: #fef2f2; }
+.btn-danger-solid {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.3);
+}
+.btn-danger-solid:hover:not(:disabled) { filter: brightness(1.05); }
+
+/* ---- Postings table ----------------------------------------------------- */
+/* 2026-08-09, per Ravindra: the old fixed max-height (420px) forced a
+   cramped inner scrollbar even for a handful of rows -- "clumsy". Removed
+   entirely: the table now renders its current page's rows (up to 20, see
+   POSTINGS_PAGE_SIZE in post_widget.js) at their natural height, with the
+   widget itself resized big enough (see post_widget.js's RESIZE call) that
+   a full 20-row page fits without any inner scrolling. Anything beyond 20
+   rows moves to a second page via the Prev/Next controls below, instead of
+   scrolling. */
+.postings-table-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: visible;
+}
+.postings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.postings-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f9fafb;
+  text-align: left;
+  padding: 9px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+.postings-table tbody td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #f1f2f4;
+  color: #1a1a2e;
+  vertical-align: top;
+}
+.postings-table tbody tr:last-child td { border-bottom: none; }
+.postings-table tbody tr.row-posted { background: #f0fdf4; }
+.postings-table tbody tr.row-not-posted { background: #fffbeb; }
+.postings-table tbody tr.row-error { background: #fef2f2; }
+.postings-table tbody tr.row-deleted { background: #f3f4f6; opacity: 0.6; }
+
+.postings-narration { max-width: 220px; overflow-wrap: break-word; }
+.postings-reference { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+.postings-reference.is-error { color: #b91c1c; }
+.postings-reference.is-not-posted { color: #92400e; }
+.postings-reference.is-posted { color: #15803d; }
+
+/* AI reference preview column -- DRY RUN ONLY (2026-08-2x, per Ravindra).
+   Same wrap treatment as .postings-narration (Gemini's response is
+   free-form text, not a fixed-width reference code) plus a slightly muted
+   color/italics so it visually reads as "preview, not yet real" next to
+   the actual .postings-reference cell. */
+.postings-ai-preview { max-width: 220px; overflow-wrap: break-word; color: #6b7280; font-style: italic; }
+
+/* 2026-08-10, per Ravindra -- distinguishes a row that was already posted
+   on an EARLIER run (skipped via the local "Zoho Posting Reference" cell,
+   never re-attempted against Zoho this run) from one that genuinely posted
+   just now, so re-posting an already-posted file doesn't read as an
+   ambiguous fresh "success" for every row. See post_widget.js's
+   renderPostingsPanel(). Upgraded from a plain inline italic label (per
+   Ravindra: "not highlighted significantly with the message. show as a
+   capsule with a coloured border or something like before") to a pill/
+   capsule badge -- reuses this project's existing .chip visual language
+   (widget.css's org-account-summary chips: pill shape, tinted background,
+   matching-color border) rather than a new one-off style, just in a
+   smaller size that fits inside a table cell and a neutral slate color
+   (distinct from the green "is-posted" reference text right above it, so
+   the two don't blend together). */
+.already-posted-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.already-posted-chip::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #64748b;
+  flex-shrink: 0;
+}
+
+.postings-empty {
+  padding: 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12.5px;
+}
+
+.row-delete-btn {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 5px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.row-delete-btn:hover:not(:disabled) { background: #fef2f2; }
+.row-delete-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.row-deleted-label { font-size: 11.5px; color: #9ca3af; font-style: italic; }
+
+/* ---- Pagination (2026-08-09, replaces the old inner scrollbox) --------- */
+.postings-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+.postings-page-label { font-size: 12.5px; color: #6b7280; font-weight: 600; min-width: 90px; text-align: center; }
+.btn-secondary {
+  background: #fff;
+  color: #4338ca;
+  border: 1px solid #e0e0f0;
+  box-shadow: none;
+}
+.btn-secondary:hover:not(:disabled) { background: #f5f5ff; }

@@ -1,0 +1,6 @@
+{
+  "name": "bank-statement-categorization",
+  "version": "1.0.0",
+  "description": "Zoho Books widget extension - select accounts to categorize",
+  "private": true
+}

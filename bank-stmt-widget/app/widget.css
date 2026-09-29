@@ -1,0 +1,346 @@
+* { box-sizing: border-box; }
+
+/* Must come before/beat any .content-panel etc. rule that sets `display` --
+   otherwise an element's own `display: flex` overrides the browser's
+   default `[hidden] { display: none }` rule even though `hidden` is set,
+   because author CSS always wins over the user-agent stylesheet at equal
+   specificity. This is what was making the done-panel (and its green tick)
+   render immediately instead of staying hidden until showDonePanel() runs. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #1a1a2e;
+  background: #ffffff;
+}
+
+.panel { display: flex; flex-direction: column; height: 100vh; }
+
+/* ---- Header ------------------------------------------------------- */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 24px 18px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #c026d3 100%);
+  color: #fff;
+}
+.header-icon {
+  font-size: 26px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+}
+.panel-header h1 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.subtitle { margin: 0; font-size: 12.5px; color: rgba(255, 255, 255, 0.85); line-height: 1.4; }
+
+/* ---- Generic panels ------------------------------------------------ */
+.status { padding: 24px; font-size: 13px; color: #6b7280; }
+.status.error { color: #b91c1c; }
+
+.content-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+/* ---- Entity-select panel -------------------------------------------- */
+.subtitle-dark { margin: 0 0 16px; font-size: 12.5px; color: #6b7280; line-height: 1.4; }
+.select-field {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  background: #fff;
+  color: #1a1a2e;
+}
+.select-field:focus { outline: none; border-color: #7c3aed; }
+.select-field:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---- Org-select panel: account search box (2026-08-02, per Ravindra) -- */
+.search-field {
+  width: 100%;
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+  color: #1a1a2e;
+}
+.search-field:focus { outline: none; border-color: #7c3aed; }
+.search-field:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---- Org-select panel: bank-account checklist ------------------------ */
+.account-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Enlarged along with the overall modal (2026-08-02, per Ravindra: "make
+     the window bigger so that what is processed is shown properly") -- was
+     220px when the whole window was smaller. */
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.account-checklist-empty { font-size: 12.5px; color: #9ca3af; padding: 4px 0; }
+.account-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+.account-checkbox-row input[type="checkbox"] { width: 16px; height: 16px; flex: none; }
+.account-checkbox-row input[type="checkbox"]:disabled { opacity: 0.55; cursor: not-allowed; }
+/* Checked rows get a light tint + accent left border so a checked account is
+   obvious at a glance while scanning/scrolling the list itself, without
+   adding any extra UI (2026-08-03, per Ravindra -- see the chip-list summary
+   below for the second half of this). */
+.account-checkbox-row.checked {
+  background: #eef2ff;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  color: #3730a3;
+  font-weight: 600;
+}
+
+/* ---- Org-select panel: live "what's selected so far" summary --------
+   2026-08-03, per Ravindra ("intuitively show the selected accounts when
+   checked, it should not be too cluttered") -- a compact chip row between
+   the checklist and the start button, populated/hidden live by
+   renderSelectedAccountsSummary() in widget.js. Reuses the .chip-list/.chip
+   rules below, which already existed (from an earlier, since-replaced
+   "ready panel" design) but had gone completely unused until now. */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid #e0e7ff;
+}
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6366f1;
+}
+
+/* ---- Overall progress bar ------------------------------------------ */
+.overall-progress { margin-bottom: 18px; }
+.overall-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+#overall-progress-pct { color: #7c3aed; }
+
+.progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #eef0f4;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  transition: width 0.45s ease;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* ---- Per-account rows ------------------------------------------------ */
+.account-rows { display: flex; flex-direction: column; gap: 8px; }
+
+.account-row-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #f1f2f4;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.account-row-item.is-processing { background: #f5f3ff; border-color: #ddd6fe; }
+.account-row-item.is-success { background: #f0fdf4; border-color: #bbf7d0; }
+.account-row-item.is-error { background: #fef2f2; border-color: #fecaca; }
+
+.row-icon {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #d1d5db;
+}
+.account-row-item.is-success .row-icon { background: #22c55e; }
+.account-row-item.is-error .row-icon { background: #ef4444; }
+.account-row-item.is-processing .row-icon { background: transparent; }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #ddd6fe;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.row-text { flex: 1; min-width: 0; }
+.row-account { font-size: 13.5px; font-weight: 600; color: #1a1a2e; }
+.row-detail { font-size: 12px; color: #6b7280; margin-top: 2px; }
+.account-row-item.is-error .row-detail { color: #b91c1c; }
+
+/* ---- Result banner ----------------------------------------------------
+   Shown IN PLACE below the account rows once a run finishes (2026-08-03,
+   per Ravindra: "just show the results as a single screen without
+   flashing and if success dont make the progress bars of the files
+   disappear. keep them and have a button to close"). Replaces the old
+   separate "done panel" that hid the rows and swapped in its own animated
+   checkmark screen -- this is purely additive: nothing above it changes. */
+.result-banner {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+.result-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.result-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.result-banner.has-errors .result-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.result-title { font-size: 15.5px; font-weight: 700; }
+.result-subtitle { font-size: 12.5px; color: #6b7280; margin-bottom: 10px; line-height: 1.4; }
+.result-notes { margin-bottom: 16px; }
+.result-note-line {
+  font-size: 12.5px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin-bottom: 6px;
+  line-height: 1.45;
+  /* Deliberately NO max-height/overflow here (2026-08-03, per Ravindra --
+     the previous done-summary box clipped longer error text inside a
+     small scroller that was easy to miss) -- notes wrap and grow
+     naturally so the full text is always visible without scrolling. */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---- Egypt entity paired bank-charge detection checkbox (2026-08-13, per
+   Ravindra) -- sits between the account checklist and the Start button on
+   the org-select panel, same understated "opt-in for a specific workflow,
+   not a warning" treatment as post_widget.css's .bank-charges-option
+   (that file isn't loaded by widget.html, so these are a deliberate
+   duplicate here rather than a shared import). See widget.js's onOrgStart
+   handler and callGcpCategorize()'s detect_paired_bank_charges field. */
+.paired-charges-option {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #f1f2f4;
+}
+.paired-charges-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+.paired-charges-option-row input[type="checkbox"] { width: 16px; height: 16px; flex: none; }
+.paired-charges-option-row em { font-style: normal; font-weight: 400; color: #9ca3af; }
+.paired-charges-option-help {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+/* ---- Buttons ----------------------------------------------------------- */
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-block { width: 100%; }
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.05); }

@@ -1,0 +1,385 @@
+* { box-sizing: border-box; }
+
+/* Same [hidden] specificity fix as widget.css/post_widget.css -- see either
+   file's own comment for why this has to come before any rule that sets
+   `display` on an element that also carries the `hidden` attribute. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #1a1a2e;
+  background: #ffffff;
+}
+
+.panel { display: flex; flex-direction: column; height: 100vh; }
+
+/* ---- Header ------------------------------------------------------- */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 24px 18px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #c026d3 100%);
+  color: #fff;
+}
+.header-icon {
+  font-size: 26px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+}
+.panel-header h1 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.subtitle { margin: 0; font-size: 12.5px; color: rgba(255, 255, 255, 0.85); line-height: 1.4; }
+
+/* ---- Generic panels ------------------------------------------------ */
+.status { padding: 24px; font-size: 13px; color: #6b7280; }
+.status.error { color: #b91c1c; }
+
+.content-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+.select-field {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  background: #fff;
+  color: #1a1a2e;
+}
+.select-field:focus { outline: none; border-color: #7c3aed; }
+.select-field:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.search-field {
+  width: 100%;
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+  color: #1a1a2e;
+}
+.search-field:focus { outline: none; border-color: #7c3aed; }
+.search-field:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---- Bank-account checklist (same pattern as widget.css) -------------- */
+.account-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.account-checklist-empty { font-size: 12.5px; color: #9ca3af; padding: 4px 0; }
+.account-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+.account-checkbox-row input[type="checkbox"] { width: 16px; height: 16px; flex: none; }
+.account-checkbox-row input[type="checkbox"]:disabled { opacity: 0.55; cursor: not-allowed; }
+.account-checkbox-row.checked {
+  background: #eef2ff;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  color: #3730a3;
+  font-weight: 600;
+}
+
+/* ---- Live "what's selected so far" summary ---------------------------- */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid #e0e7ff;
+}
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6366f1;
+}
+
+/* ---- Selected org/account context bar (2026-08-13, later same day) ----
+   "show the selected org and account at the top" -- sticky to the TOP of
+   the results panel (not the whole widget -- .content-panel is the
+   scrolling element, see [hidden]/.content-panel above) so it stays
+   visible even in the rare case the panel still needs to scroll (many
+   accounts, or several unmatched-row lists expanded at once). Kept compact
+   (one line, wraps if needed) so it doesn't eat into the room freed up by
+   the bigger window. */
+.results-context-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background: #f5f3ff;
+  border: 1px solid #ede9fe;
+  font-size: 12.5px;
+}
+.results-context-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 10.5px;
+  color: #7c3aed;
+}
+.results-context-value { color: #1a1a2e; font-weight: 600; }
+.results-context-sep { color: #c4b5fd; margin: 0 2px; }
+
+/* ---- Overall progress bar ------------------------------------------ */
+.overall-progress { margin-bottom: 18px; }
+.overall-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+#overall-progress-pct { color: #7c3aed; }
+
+.progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #eef0f4;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  transition: width 0.45s ease;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* ---- Result cards -- one per reconciled account ------------------------
+   2026-08-13, new for this widget: each check needs to show a clear pass/
+   fail state PLUS the actual numbers behind it ("nice and understandable
+   and intuitive" per Ravindra's original request) -- not just a checkmark,
+   since a Yes/No alone doesn't tell you HOW FAR OFF a failed check is. */
+/* 2026-08-13, later same day, per Ravindra: "use the rest of the screen
+   for results with no scrolling as much as possible" -- was a single
+   vertical stack (display:flex, column), which forced a scroll the moment
+   more than 1-2 accounts were reconciled at once, even with the enlarged
+   1400x900 window (see reconciliation_widget.js's RESIZE call). A
+   responsive grid lets several accounts' cards sit side by side instead,
+   using the window's new WIDTH (not just its height) to avoid scrolling --
+   minmax(420px, 1fr) keeps each card wide enough for the check-row detail
+   text to stay readable, auto-fit collapses back to a single column on its
+   own if the window is ever narrower than that (no media query needed).
+   align-items: start stops a tall card (e.g. one with several unmatched
+   rows expanded) from stretching every other card in its row to match. */
+.result-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.result-card {
+  border-radius: 12px;
+  border: 1px solid #f1f2f4;
+  background: #f9fafb;
+  overflow: hidden;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.result-card.is-processing { background: #f5f3ff; border-color: #ddd6fe; }
+.result-card.is-pass { background: #f0fdf4; border-color: #bbf7d0; }
+.result-card.is-fail { background: #fef2f2; border-color: #fecaca; }
+.result-card.is-error { background: #fef2f2; border-color: #fecaca; }
+
+.result-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.result-card-icon {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #d1d5db;
+}
+.result-card.is-pass .result-card-icon { background: #22c55e; }
+.result-card.is-fail .result-card-icon, .result-card.is-error .result-card-icon { background: #ef4444; }
+.result-card.is-processing .result-card-icon { background: transparent; }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #ddd6fe;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.result-card-title-block { flex: 1; min-width: 0; }
+.result-card-account { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+.result-card-file { font-size: 11.5px; color: #6b7280; margin-top: 2px; }
+.result-card.is-error .result-card-detail { color: #b91c1c; font-size: 12.5px; padding: 0 16px 14px; }
+
+.check-rows { display: flex; flex-direction: column; gap: 1px; background: #f1f2f4; }
+.check-row { background: #fff; padding: 12px 16px; display: flex; gap: 10px; align-items: flex-start; }
+.result-card.is-pass .check-row, .result-card.is-fail .check-row { background: #fffffe; }
+.check-row-icon {
+  font-size: 13px;
+  font-weight: 700;
+  width: 18px;
+  min-width: 18px;
+  text-align: center;
+  margin-top: 1px;
+}
+.check-row.pass .check-row-icon { color: #16a34a; }
+.check-row.fail .check-row-icon { color: #dc2626; }
+.check-row-body { flex: 1; min-width: 0; }
+.check-row-title { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+.check-row-detail { font-size: 12px; color: #6b7280; margin-top: 3px; line-height: 1.5; }
+.check-row-detail .num { font-variant-numeric: tabular-nums; font-weight: 600; color: #374151; }
+/* rows_after_period_end note (2026-08-13, later still) -- subordinate to
+   the main Statement/Zoho/Difference line, same treatment as
+   .unmatched-reason. */
+.check-row-note { display: inline-block; margin-top: 4px; font-style: italic; color: #92400e; }
+
+/* Expandable unmatched-rows list for the "all posted" check -- collapsed by
+   default (native <details>/<summary>, no JS needed to toggle). */
+.unmatched-list summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  margin-top: 6px;
+}
+.unmatched-row {
+  font-size: 11.5px;
+  color: #6b7280;
+  padding: 6px 0;
+  border-top: 1px solid #f1f2f4;
+  line-height: 1.4;
+}
+.unmatched-row .amt { font-weight: 600; color: #374151; }
+/* unmatched_reason (2026-08-13, later same day) -- the WHY, right under the
+   row's own narration, visually subordinate to it (smaller, italic) since
+   the narration line is what a user visually matches against their own
+   statement first. */
+.unmatched-reason { margin-top: 3px; font-size: 11px; font-style: italic; color: #9ca3af; }
+
+.caveats-block {
+  padding: 10px 16px 14px;
+  font-size: 11px;
+  color: #92400e;
+  background: #fffbeb;
+  border-top: 1px solid #f1f2f4;
+  line-height: 1.5;
+}
+.caveats-block ul { margin: 4px 0 0; padding-left: 16px; }
+
+/* ---- Result banner (final "All done" summary) -------------------------- */
+.result-banner {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+.result-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.result-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.result-banner.has-errors .result-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.result-title { font-size: 15.5px; font-weight: 700; }
+.result-subtitle { font-size: 12.5px; color: #6b7280; margin-bottom: 16px; line-height: 1.4; }
+
+/* ---- Buttons ----------------------------------------------------------- */
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-block { width: 100%; }
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.05); }

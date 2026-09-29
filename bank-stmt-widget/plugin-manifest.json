@@ -1,0 +1,44 @@
+{
+  "locale": ["en"],
+  "service": "FINANCE",
+  "plugin-manifest-version": "1.0",
+  "extension_name": "Bank Statement Categorization",
+  "modules": {
+    "widgets": [
+      {
+        "name": "Categorize...",
+        "widget_type": "modal",
+        "location": "cm_bank_transaction_testing.details.button",
+        "url": "/app/widget.html",
+        "logo": "/app/img/logo.png",
+        "popup": { "align": "center" }
+      },
+      {
+  "name": "Post Entries",
+  "widget_type": "modal",
+  "location": "cm_bank_transaction_testing.details.button",
+  "url": "/app/post_widget.html",
+  "logo": "/app/img/logo.png",
+  "popup": { "align": "center" }
+},{
+  "name": "Supporting Docs...",
+  "widget_type": "modal",
+  "location": "cm_bank_transaction_testing.details.button",
+  "url": "/app/supp_doc_widget.html",
+  "logo": "/app/img/logo.png",
+  "popup": { "align": "center" }
+},{
+  "name": "Reconcile Bank Statement...",
+  "widget_type": "modal",
+  "location": "cm_bank_transaction_testing.details.button",
+  "url": "/app/reconciliation_widget.html",
+  "logo": "/app/img/logo.png",
+  "popup": { "align": "center" }
+}
+    ]
+  },
+  "usedConnections": [],
+  "cspDomains": {
+    "connect-src": ["https://bank-statement-automation.us-central1.run.app"]
+  }
+}

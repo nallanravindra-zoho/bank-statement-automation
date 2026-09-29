@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Post to Zoho Books</title>
+  <link rel="stylesheet" href="widget.css" />
+  <link rel="stylesheet" href="post_widget.css" />
+  <!-- Same Zoho Finance widget SDK as widget.html -- gives us the ZFAPPS
+       global used below. -->
+  <script src="https://js.zohostatic.com/zohofinance/v2.0/zf_sdk.js"></script>
+</head>
+<body>
+  <div class="panel post-panel">
+    <div class="panel-header">
+      <div class="header-icon">&#128179;</div>
+      <div>
+        <h1>Post to Zoho Books</h1>
+        <p class="subtitle">Posts every already-categorized, not-yet-posted row to Zoho Books based on its
+          Posting Type, then shows a live status of every posting with a Delete button against each.</p>
+      </div>
+    </div>
+
+    <div id="status" class="status">Loading organizations and accounts&hellip;</div>
+
+    <!-- Run header: replaces the old per-account progress-panel entirely.
+         2026-08-09 (later still), per Ravindra: "you can utilize the whole
+         screen just show the name of the selected org and account(s) at
+         the top and start showing the postings info live as they get
+         updated not at the end." Shown once posting starts (see
+         startPosting() in post_widget.js); org-select-panel is hidden at
+         the same moment, not just disabled, since there's nothing left to
+         pick once a run is underway. -->
+    <div id="run-header" class="run-header" hidden>
+      <div id="run-header-org" class="run-header-org"></div>
+      <div id="run-header-accounts" class="run-header-accounts"></div>
+      <div id="run-header-status" class="run-header-status"></div>
+    </div>
+
+    <!-- Org-select panel: this widget picks its OWN organization + accounts,
+         run independently of any prior "Start Categorizing" run in the same
+         Zoho session (2026-08-09, per Ravindra's confirmed design answer,
+         "Own org + account picker") -- same pattern/markup as widget.html's
+         org-select-panel. -->
+    <div id="org-select-panel" class="content-panel" hidden>
+      <div class="section-label">Organization</div>
+      <select id="org-select" class="select-field"></select>
+
+      <div class="section-label" style="margin-top: 20px;">Bank accounts</div>
+      <input type="text" id="account-search" class="search-field" placeholder="Search accounts by name&hellip;" autocomplete="off" />
+      <div id="org-accounts-list" class="account-checklist"></div>
+
+      <div id="selected-accounts-summary" class="chip-list" hidden></div>
+
+      <!-- Bank Charges/VAT consolidation (2026-08-10, per Ravindra): Bank
+           charges and VAT on bank charges rows are NEVER posted one-by-one
+           (too many entries per month) -- they're always excluded from the
+           normal per-row posting run. This checkbox controls whether, on
+           TOP of that, a separate consolidated posting also runs this time:
+           one summed "Bank Charges - VAT" entry for every Bank charges row
+           that has a matching VAT row (same trailing narration code), and
+           one summed "Bank Charges Non-VAT" entry (tax treatment "Out of
+           Scope") for the leftover Bank charges rows with no VAT match.
+           Default UNCHECKED ("Excluded") -- per Ravindra, this only gets
+           checked at month-end once a complete statement is available;
+           mid-month runs leave it off and those rows simply wait. See
+           post_widget.js's runPosting()/callGcpPostBankCharges(). -->
+      <div class="bank-charges-option">
+        <label class="bank-charges-option-row">
+          <input type="checkbox" id="include-bank-charges-checkbox" />
+          <span>Bank Charges Included/Excluded <em>(default: Excluded)</em></span>
+        </label>
+        <p class="bank-charges-option-help">
+          Leave unchecked for a normal/mid-month run -- Bank charges and VAT on bank charges rows are always
+          skipped either way. Check this only with a complete month's statement to also post one summed
+          "Bank Charges - VAT" entry and one summed "Bank Charges Non-VAT" entry, instead of one entry per
+          transaction.
+        </p>
+      </div>
+
+      <button type="button" id="org-start-btn" class="btn btn-primary btn-block" style="margin-top: 16px;">OK, Start Posting</button>
+    </div>
+
+    <!-- Result banner: final "All done!" / "Finished with some errors"
+         summary, shown once every selected account/file has finished
+         streaming -- moved out of the old progress-panel (removed
+         2026-08-09, later still) since it now sits directly below the
+         run-header instead of inside a panel that no longer exists. -->
+    <div id="result-banner" class="result-banner" hidden>
+      <div class="result-banner-header">
+        <span id="result-icon" class="result-icon">&#10003;</span>
+        <span id="result-title" class="result-title">All done!</span>
+      </div>
+      <div id="result-subtitle" class="result-subtitle"></div>
+      <div id="result-notes" class="result-notes"></div>
+    </div>
+
+    <!-- Postings panel: the live table of every posting from this run (new
+         successes, failures, and already-posted-earlier rows), with counts
+         and a Delete button against each -- plus a top "Delete All" button.
+         2026-08-09, per Ravindra: "i want a live status of each of the
+         postings showing the counts and other relevant statistics. Also i
+         want a delete button against each posting and also a delete all
+         button at the top." -->
+    <div id="postings-panel" class="content-panel" hidden>
+      <div id="postings-stats" class="postings-stats"></div>
+
+      <div class="postings-toolbar">
+        <span id="postings-count-label" class="postings-count-label"></span>
+        <button type="button" id="delete-all-btn" class="btn btn-danger btn-small">Delete All</button>
+      </div>
+
+      <div class="postings-table-wrap">
+        <table id="postings-table" class="postings-table">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Narration</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status / Zoho Reference</th>
+              <!-- Resolved at /categorize time now, not here (2026-08-12,
+                   LATER SAME DAY, per Ravindra: "I want the creating of
+                   the reference to happen while doing the catergorization
+                   not while posting"). History, same day: started DRY RUN
+                   ONLY (shown purely for inspection, not wired into what
+                   was sent to Zoho) -> briefly went LIVE WHILE POSTING (a
+                   real Gemini call, per row, right before dispatch) -> now
+                   LIVE AT CATEGORIZATION TIME -- categorize_workbook()
+                   resolves each row's reference ONCE, up front (rule's own
+                   cf_reference -> Gemini -> the statement's raw Reference
+                   column), into a new "PostingReference" Excel column;
+                   /post-transactions just reads it and posts with it, no
+                   AI call happens at posting time any more. This column
+                   simply shows row.posting_reference -- whatever text
+                   this row actually posted with. See post_widget.js's
+                   renderPostingsPanel(), main.py's /post-transactions, and
+                   categorize_from_module.py's POSTING_REFERENCE_COLUMN_NAME
+                   comment for the full feature. -->
+              <th>Posting Reference</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="postings-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -- 20 rows per page (2026-08-09, per Ravindra: "i need
+           a full view of the rows may be 20 rows and paginated if more" --
+           replaces the old fixed-height inner scrollbox, which he flagged
+           as clumsy). Hidden entirely when everything fits on one page. -->
+      <div id="postings-pagination" class="postings-pagination" hidden>
+        <button type="button" id="postings-prev-btn" class="btn btn-secondary btn-small">&larr; Prev</button>
+        <span id="postings-page-label" class="postings-page-label"></span>
+        <button type="button" id="postings-next-btn" class="btn btn-secondary btn-small">Next &rarr;</button>
+      </div>
+    </div>
+
+    <button type="button" id="close-btn" class="btn btn-primary btn-block" style="margin-top: 16px;">Close</button>
+  </div>
+
+  <script src="post_widget.js"></script>
+</body>
+</html>

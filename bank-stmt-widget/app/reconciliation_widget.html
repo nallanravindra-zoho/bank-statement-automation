@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Month-End Reconciliation</title>
+  <link rel="stylesheet" href="reconciliation_widget.css" />
+  <!-- Zoho Finance widget SDK -- same v2.0 script every other widget in this
+       extension loads (see widget.html's own comment for why v2.0, not
+       v1.0). -->
+  <script src="https://js.zohostatic.com/zohofinance/v2.0/zf_sdk.js"></script>
+</head>
+<body>
+  <div class="panel">
+    <div class="panel-header">
+      <div class="header-icon">&#9878;</div>
+      <div>
+        <h1>Month-End Reconciliation</h1>
+        <p class="subtitle">Pick a month and the bank account(s) to reconcile -- checks the predefined
+          month-end statement against Zoho Books for a balance match, a credits/debits match, and
+          confirms every statement entry has been posted.</p>
+      </div>
+    </div>
+
+    <div id="status" class="status">Loading organizations and accounts&hellip;</div>
+
+    <!-- Org-select panel: same organization + real-bank-account picker every
+         other widget in this extension uses (see widget.html's own comment
+         for the full history of why this replaced a hand-maintained
+         "Entities" module). No Categorization-rules fetch here at all --
+         this widget never categorizes or posts anything, purely read-only
+         reporting. -->
+    <div id="org-select-panel" class="content-panel" hidden>
+      <div class="section-label">Organization</div>
+      <select id="org-select" class="select-field"></select>
+
+      <div class="section-label" style="margin-top: 20px;">Month to reconcile</div>
+      <input type="month" id="month-year-select" class="select-field" />
+
+      <div class="section-label" style="margin-top: 20px;">Bank accounts</div>
+      <input type="text" id="account-search" class="search-field" placeholder="Search accounts by name&hellip;" autocomplete="off" />
+      <div id="org-accounts-list" class="account-checklist"></div>
+
+      <div id="selected-accounts-summary" class="chip-list" hidden></div>
+
+      <button type="button" id="org-start-btn" class="btn btn-primary btn-block" style="margin-top: 16px;">Run Reconciliation</button>
+    </div>
+
+    <!-- Results panel: one card per account, populated live as each
+         account's /reconcile call comes back (accounts run in parallel,
+         same "don't make the user wait for the slowest one before seeing
+         anything" philosophy as the other widgets' per-account progress
+         rows). Stays visible for the whole session -- nothing here gets
+         replaced/hidden once shown, only appended to, same "no flashing
+         transitions" convention the other widgets in this extension
+         settled on. -->
+    <div id="results-panel" class="content-panel" hidden>
+      <!-- Selected org/account context bar (2026-08-13, later same day, per
+           Ravindra: "show the selected org and account at the top") --
+           sticky so it stays visible even if the results panel itself ends
+           up needing to scroll (a lot of accounts, or a lot of unmatched
+           rows expanded at once). Populated by reconciliation_widget.js's
+           renderResultsContextBar(), called once right as the run starts. -->
+      <div id="results-context-bar" class="results-context-bar" hidden>
+        <span class="results-context-label">Organization</span>
+        <span id="results-context-org" class="results-context-value"></span>
+        <span class="results-context-sep">&middot;</span>
+        <span class="results-context-label">Account(s)</span>
+        <span id="results-context-accounts" class="results-context-value"></span>
+      </div>
+      <div class="overall-progress">
+        <div class="overall-progress-labels">
+          <span id="overall-progress-label">Reconciling 0 of 0 accounts&hellip;</span>
+          <span id="overall-progress-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="overall-progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+      <div id="result-cards" class="result-cards"></div>
+
+      <div id="result-banner" class="result-banner" hidden>
+        <div class="result-banner-header">
+          <span id="result-icon" class="result-icon">&#10003;</span>
+          <span id="result-title" class="result-title">All accounts reconciled cleanly</span>
+        </div>
+        <div id="result-subtitle" class="result-subtitle"></div>
+        <button type="button" id="close-btn" class="btn btn-primary btn-block">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="reconciliation_widget.js"></script>
+</body>
+</html>

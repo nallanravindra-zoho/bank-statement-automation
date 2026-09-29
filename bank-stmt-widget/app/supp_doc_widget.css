@@ -1,0 +1,58 @@
+/* supporting_docs_widget.css -- styles specific to
+   supporting_docs_widget.html, on top of widget.css (panel/header/status/
+   org-select/buttons) AND post_widget.css (run-header, postings-stats,
+   postings-toolbar/table/row-classes) -- both reused as-is, same "shared
+   design system across every widget in this extension" convention as
+   post_widget.css's own opening comment. Everything below is NEW UI this
+   widget needs that neither of the other two already provides: a hint line
+   explaining the docs/<account>/ folder convention, and a couple of small
+   badges/labels for the attachment outcome.
+
+   2026-08-12, per Ravindra's Supporting Document Attachment feature request
+   -- REWRITTEN, later the same day, when Ravindra scoped the feature down
+   to attachment-only ("i want to park the document extraction and
+   validation aside and want only to attach the required document to the
+   expense entry ... discard all the previous changes made for validation
+   and gemini pdf doc reading"): the earlier version of this file styled a
+   single-file picker and Invoice Found/VAT Update/Attachment badge columns
+   for the discarded verification design -- this version drops the
+   single-file-picker styling (the widget now uses the same org+account
+   checklist as post_widget.html, styled by widget.css alone) and simplifies
+   the badges to just the attachment outcome. */
+
+.supporting-docs-panel { min-width: 0; }
+
+/* ---- Docs-folder convention hint (between the account checklist and the
+   Start button) */
+.supporting-docs-file-hint {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+/* ---- Results table: reuses .postings-table/.postings-stats/.postings-
+   toolbar wholesale from post_widget.css -- only the semantics of the
+   per-row status columns are different here (invoice file / matched Zoho
+   record / attachment status instead of a posting reference), so only new
+   small badge/cell styles are added, not a new table skin. */
+.checks-status-cell { max-width: 260px; overflow-wrap: break-word; font-size: 12px; }
+.checks-matched-cell { font-size: 12px; color: #4b5563; }
+
+.doc-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.doc-badge.badge-yes { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.doc-badge.badge-no { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.doc-badge.badge-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.doc-badge.badge-na { background: #f9fafb; color: #9ca3af; border: 1px solid #f1f2f4; }
+
+/* Row background reuses post_widget.css's .row-posted/.row-not-posted/
+   .row-error classes directly -- "Attached" maps to row-posted (green),
+   "NOT ATTACHED" maps to row-not-posted (amber), "ERROR" maps to row-error
+   (red) -- see supporting_docs_widget.js's statusBadgeClass(). */
